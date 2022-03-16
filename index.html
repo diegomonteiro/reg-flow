@@ -1,0 +1,1550 @@
+
+
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <script
+      src="https://code.jquery.com/jquery-3.6.0.min.js"
+      integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4="
+      crossorigin="anonymous"></script>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" integrity="sha512-xodZBNTC5n17Xt2atTPuE1HxjVMSvLVW9ocqUKLsCC5CXdbqCmblAshOMAS6/keqq/sMZMZ19scR4PsZChSR7A==" crossorigin="" />
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-ka7Sk0Gln4gmtz2MlQnikT1wXgYsOg+OMhuP+IlRH9sENBO0LRn5q+8nbTov4+1p" crossorigin="anonymous"></script>
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js" integrity="sha512-XQoYMqMTK8LvdxXYG3nZ448hOEQiglfqkJs1NOQV44cWnUrBc8PkAOcXy20w0vlaXaVUearIOBhiXZ5V3ynxwA==" crossorigin=""></script>
+    
+    <script src="https://cdn.jsdelivr.net/npm/leaflet-iconlayers@0.2.0/dist/iconLayers.js"></script>
+    <script src="http://unbam.github.io/Leaflet.SlideMenu/L.Control.SlideMenu.js"></script>
+
+    <link href="https://cdn.jsdelivr.net/npm/leaflet-iconlayers@0.2.0/dist/iconLayers.css" text="text/css" rel="stylesheet" />
+    <link href="http://unbam.github.io/Leaflet.SlideMenu/L.Control.SlideMenu.css" text="text/css" rel="stylesheet" />
+
+    <link href="https://gitcdn.github.io/bootstrap-toggle/2.2.2/css/bootstrap-toggle.min.css" rel="stylesheet">
+    <script src="https://gitcdn.github.io/bootstrap-toggle/2.2.2/js/bootstrap-toggle.min.js"></script>
+
+    <script src="https://unpkg.com/geojson-vt@3.2.0/geojson-vt.js"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/@turf/turf@6/turf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/lodash@4.17.21/lodash.min.js"></script>
+    <script src="https://code.highcharts.com/highcharts.js"></script>
+     
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.2/MarkerCluster.Default.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.2/leaflet.markercluster.js"></script>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-tilelayer-geojson/1.0.2/TileLayer.GeoJSON.min.js"></script>
+
+      
+    <link rel="stylesheet" href="https://unpkg.com/@geoman-io/leaflet-geoman-free@latest/dist/leaflet-geoman.css" />
+    <script src="https://unpkg.com/@geoman-io/leaflet-geoman-free@latest/dist/leaflet-geoman.min.js"></script>  
+
+
+    <script src="shapes/rau.json"></script>
+    <script src="shapes/rxyz.json"></script>
+    <script src="shapes/rain_isoline.json"></script>
+    <script src="shapes/ottobacias.json"></script>
+    <script src="shapes/ottotrechos.json"></script>
+    <title>Regionalização de Vazão - SP</title>
+
+    <style>
+        #map{
+            height: 500px;
+            width: 100%;
+        }
+    </style>
+  </head>
+<body>
+       
+<nav class="navbar navbar-expand-md navbar-dark bg-dark">
+    <div class="container-fluid">
+      <a class="navbar-brand" href="#">REG-FLOW</a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarCollapse">
+        <ul class="navbar-nav me-auto mb-2 mb-md-0">
+          <li class="nav-item">
+            <a class="nav-link active" aria-current="page" href="#">Home</a>
+          </li>
+         
+        </ul>
+        <form class="d-flex">
+          <input class="form-control me-2" type="search" placeholder="..." aria-label="Search">
+          <button class="btn btn-outline-success" type="submit">Buscar</button>
+        </form>
+      </div>
+    </div>
+  </nav>
+
+
+  <div class="offcanvas offcanvas-start" tabindex="-1" id="offcanvas-info" data-bs-scroll="true" data-bs-backdrop="false" aria-labelledby="offcanvas-info">
+    <div class="offcanvas-header">
+      <h5 class="offcanvas-title" id="offcanvas-info-title"></h5>
+      <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+    </div>
+    <div class="offcanvas-body">
+      <div class="card bg-light mb-3" style="max-width: 20rem;">
+        <div class="card-header">Bacia</div>
+        <div class="card-body">
+          <ul class="list-group list-group-flush">
+            <li class="list-group-item"><b>Área (km²):</b> <span class="info-area"></span></li>
+            <li class="list-group-item"><b>Perí­metro (km): </b> <span class="info-perimeter"></span></li>
+            <li class="list-group-item"><b>Coef.Compacidade: </b><span class="info-coef-compacity"></span></li>
+            <li class="list-group-item"><b>Prec.Média(mm): </b><span class="info-rain-avg"></span></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="card bg-light mb-3" style="max-width: 20rem;">
+        <div class="card-header">Resultados</div>
+        <div class="card-body">
+          <ul class="list-group list-group-flush">
+            <li class="list-group-item"><b>Vazão Média Anual (m³/s):</b> <span class="info-qa"></span></li>
+            <li class="list-group-item"><b>Vazão (Q95%): </b> <span class="info-q95"></span></li>
+            <li class="list-group-item"><b>Vazão (Q7,10): </b><span class="info-q710"></span></li>
+          </ul>
+        </div>
+      </div>
+
+      
+    </div>
+  </div>
+
+  <div class="offcanvas offcanvas-bottom" tabindex="-1" id="offcanvas-elevations" data-bs-scroll="true" data-bs-backdrop="false" aria-labelledby="offcanvas-elevations">
+    <div class="offcanvas-header">
+      <h5 class="offcanvas-title" id="offcanvas-elevations-title"></h5>
+      <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+    </div>
+    <div class="offcanvas-body small">
+      <div id="elevation_chart" style="height: 200px; width: 100%"></div>
+    </div>
+  </div>
+  
+<div id="map"></div>
+ 
+
+
+</body>
+<script>
+var map = L.map('map',{maxZoom: 18, pmIgnore: false}).setView([-22.255, -48.14], 7);
+map.pm.setLang('pt_br');
+
+var providers = {};
+var overlayMaps = {};
+var controlLayer;
+var scalebar;
+var opacity_control;
+
+const pi_div_360 = Math.PI / 360.0;
+const pi_div_180 = Math.PI / 180.0;
+const pi_div_2 = Math.PI / 2.0;
+const pi_4 = Math.PI * 4;
+const pi_2 = Math.PI * 2;
+const pi = Math.PI;
+const _180_div_pi = 180 / Math.PI;
+const originShift = pi_2 * 6378137 / 2.0;
+var tileSize = tileSize || 256;
+const initialResolution = pi_2 * 6378137 / tileSize;
+
+var tiles = {};
+
+//Number seconds of Month
+const K = 2628000;
+
+var calcGroup = L.layerGroup([], {panel: 'top'} );
+var isolineGroup = L.layerGroup();
+var hidroGroup = L.layerGroup();
+
+map.createPane('top');
+map.getPane('top').style.zIndex = 650;
+
+const return_periods = [10,15,20,25,50,100];
+const d_months = [1,2,3,4,5,6];
+const pps = [5,10,15,20,25,30,40,50,60,70,75,80,85,90,95,100];
+
+var aux_markers = L.markerClusterGroup(
+  {
+    animate:false,
+    removeOutsideVisibleBounds:true,
+    spiderfyOnMaxZoom: true,
+	  showCoverageOnHover: true,
+	  zoomToBoundsOnClick: true,
+    maxClusterRadius: 30
+  }
+);
+
+map.addLayer(aux_markers);
+
+var heights = [];
+
+map.pm.addControls({  
+  position: 'topleft',  
+  drawCircle: false,
+  drawCircleMarker: false,
+  drawRectangle: false,
+  drawPolyline: false
+});
+
+map.on('layeradd', function(e){
+  if(e.layer._latlng){
+    //Ponto com altitude
+    if(e.layer._latlng && e.layer.options.calculable){
+      console.log("Ponto com Altitude Adicionado: ", e);
+      var aux_point = turf.point([e.layer._latlng.lng,e.layer._latlng.lat], {altitude: e.layer._latlng.alt});
+
+      var options = {
+        altitude: e.layer._latlng.alt,
+        rau_region: find_rau_values(aux_point),
+        rxyz_region: find_rxyz_values(aux_point)
+      };
+
+      var point = turf.point([e.layer._latlng.lng,e.layer._latlng.lat], options);
+
+      console.log("Map Point Filled: ", point);
+    }
+    
+  }
+});
+
+
+map.on('pm:create', (e) => {
+  e.layer.options.calculable = true;
+  L.PM.reInitLayer(e.layer);
+
+  var drawed_layers = L.PM.Utils.findLayers(map);
+
+  //Check if drawed layers length >= 2
+  if(drawed_layers.length >= 2){
+    //Checking layers includes (Polygon and Marker)
+    console.log("Drawed layers: ", drawed_layers);
+
+    var shape_types = _.uniq(_.map(drawed_layers,function(o){ return o.pm._shape}));
+
+    console.log("Shape Types: ", shape_types);
+
+    if(_.includes(shape_types, "Marker") && _.includes(shape_types, "Polygon")){
+      //Checking Marker intersects with Polygon
+      var points = _.filter(drawed_layers, function(o){ return o.pm._shape == "Marker" });
+      var basins = _.filter(drawed_layers, function(o){ return o.pm._shape == "Polygon" });
+
+      var turf_points = [];
+
+      $.each(points, function(k,point){
+        turf_points.push(turf.point([e.layer._latlng.lng, e.layer._latlng.lat]));
+      })
+
+      $.each(basins, function(k,basin){
+        var points_grid = turf.featureCollection(turf_points);
+        var pts = turf.pointsWithinPolygon(points_grid, basin.toGeoJSON());
+
+        var basin_area = turf.area(basin.toGeoJSON())/1000000;
+        var basin_border = turf.polygonToLine(basin.toGeoJSON());
+        var perimeter = turf.length(basin_border, {units: 'kilometers'});
+        var coef_compacity = calc_coef_compacity(basin_area,perimeter);
+
+        //console.log("Markers in Basin: ", pts);
+
+        turf.featureEach(pts, function (currentPoint, featureIndex) {
+          //console.log("Point in Basin: ", currentPoint);
+
+          var avg_rain = getAvgAnnualRainByRegion(basin);
+          console.log("Rain(mm/year): ", avg_rain);          
+          console.log("Area (kmÂ²) => ", basin_area);
+
+          var rau = find_rau_values(currentPoint);
+          var rxyz = find_rxyz_values(currentPoint);
+
+          console.log("Region (XYZ): ", rxyz.ID," - C: ",rxyz);
+          console.log("Region (A..U): ", rau);
+
+          var qls_m3s = calc_average_flow_rate_long_period(rau.ab_pq_values.param_a, rau.ab_pq_values.param_b, avg_rain, basin_area);
+
+          console.log("Qt(mÂ³/s): ",qls_m3s.toFixed(2));
+
+          //d - months
+          $.each(d_months, function(k,d){
+            $.each(return_periods, function(w,t){
+              //calc_minimal_flow_rate(d,t)
+              
+              var xt = rau.xt_values[w];
+              var qmin = calc_minimal_flow_rate(d,xt,qls_m3s,rau.ab_mean_values.a,rau.ab_mean_values.b);
+              
+              console.log("DT("+d+","+t+") => XT:",rau.xt_values[w]," >>> Q(min): ",qmin);
+            });
+            console.log("------------");
+            
+          });
+
+          var q710;
+          var q95 = calc_flow_permanence(rau.REGIAO, qls_m3s, 14);
+
+          $.each(return_periods, function(w,t){
+            var xt = rau.xt_values[w];
+            var qdT  = calc_minimal_flow_rate_qdt(t,xt,rxyz.C,qls_m3s,rau.ab_mean_values.a,rau.ab_mean_values.b,7);
+            console.log("Q(7,"+t+") => "+qdT.toFixed(2)+" mÂ³/s");
+
+            if(w == 0){
+              q710 = qdT;
+              $(".info-q710").html(q710.toFixed(2));
+            }
+          });
+
+          var offcanvas = document.getElementById('offcanvas-info');
+          var bsoffcanvas = new bootstrap.Offcanvas(offcanvas);
+
+          $(".info-area").html(basin_area.toFixed(2));
+          $(".info-perimeter").html(perimeter.toFixed(2));
+          $(".info-coef-compacity").html(coef_compacity.toFixed(2));
+          $(".info-rain-avg").html(avg_rain.toFixed(1));
+
+          $(".info-qa").html(qls_m3s.toFixed(3));
+          $(".info-q710").html(q710.toFixed(3));
+          $(".info-q95").html(q95.toFixed(3));
+
+          bsoffcanvas.show();
+        });
+
+        
+      });
+
+    }
+  }
+  
+});
+
+window.onload = function(event){
+  resize_map();
+}
+
+window.onresize = function(event) {
+  resize_map();
+};
+
+var isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+
+//Loaders
+load_baselayers();
+load_layer_control();
+load_scale_control();
+
+
+isolineGroup.addTo(map);
+isolineGroup.setZIndex(2);
+calcGroup.addTo(map);
+calcGroup.setZIndex(1);
+hidroGroup.addTo(map);
+
+var ottotrechos_geo = L.geoJSON(ottotrechos, {
+  pmIgnore: true,
+  style: style_ottotrechos,
+  onEachFeature: onEachFeature
+}).addTo(map);
+
+var ottobacias_geo = L.geoJSON(ottobacias, {
+  pmIgnore: true,
+  style: style_ottobacias,
+  onEachFeature: onEachFeature
+}).addTo(map);
+
+
+var options = {
+  maxZoom: 16,
+  tolerance: 3,
+  debug: 0,
+  style: {
+    fillColor: "#1EB300",
+    color: "#F2FF00",
+  },
+};
+
+
+
+var rau_geo = L.geoJSON(rau);
+var rxyz_geo = L.geoJSON(rxyz);
+
+
+controlLayer.addOverlay(calcGroup, "Desenhos");
+controlLayer.addOverlay(ottobacias_geo, "Ottobacias");
+controlLayer.addOverlay(ottotrechos_geo, "Ottotrechos");
+controlLayer.addOverlay(isolineGroup, "Isoietas");
+
+
+function load_layer_control(){
+  controlLayer = L.control.layers({}, overlayMaps).addTo(map);
+}
+
+
+function load_scale_control(){
+  scalebar = L.control.scale({ metric: true, imperial: false, maxWidth: 200 }).addTo(map);
+}
+
+function highlightFeature(e) {
+  var layer = e.target;
+
+  layer.setStyle({
+      weight: 3,
+      color: '#FFF1FF',
+      dashArray: '',
+      fillOpacity: 0.3
+  });
+
+  if (!L.Browser.ie && !L.Browser.opera && !L.Browser.edge) {
+      layer.bringToFront();
+  }
+}
+
+const truncate = (str, len) => {
+   if (str.length > len) {
+      if (len <= 3) {
+         return str.slice(0, len - 3) + "...";
+      }
+      else {
+         return str.slice(0, len) + "...";
+      };
+   }
+   else {
+      return str;
+   };
+};
+
+function getRainColor(feature){
+  var d = (feature.properties.ID || feature.properties.rain);
+
+  return   d > 3250  ? '#4424FD' :
+           d > 2750  ? '#9D67FE' :
+           d > 2250  ? '#E0A9FE' :
+           d > 1750  ? '#4CCFFD' :
+           d > 1450  ? '#6CE4A9' :
+           d > 1350  ? '#44FE02' :
+           d > 1250  ? '#F3FD47' :
+           d > 1150  ? '#F9E845' :
+                       '#FAAD45';
+}
+
+function style_rain_isoline(feature){
+  return {
+        fillColor: getRainColor(feature),
+        weight: 1.3,
+        opacity: 1,
+        color: 'gray',
+        dashArray: '3',
+        fillOpacity: 0.3
+    };
+}
+
+function style_ottobacias(feature) {
+    return {
+        fillColor: "#22cc22",
+        weight: 1.2,
+        opacity: 1,
+        color: 'gray',
+        fillOpacity: 0
+    };
+}
+
+function style_ottotrechos(feature) {
+  return {
+      fillColor: "blue",
+      weight: 1,
+      opacity: 1,
+      color: 'blue',
+      fillOpacity: 0.4
+  };
+}
+
+
+function resetHighlight(e) {
+  ottobacias_geo.resetStyle(e.target);
+}
+
+function _calculateHeightFromPixel(pixelRGBArray) {
+    let red = pixelRGBArray[0];
+    let green = pixelRGBArray[1];
+    let blue = pixelRGBArray[2];
+    return -10000 + ((red * 256 * 256 + green * 256 + blue) * 0.1);
+}
+
+// Closure
+(function(){
+
+/**
+ * Ajuste decimal de um nÃºmero.
+ *
+ * @param	{String}	type	O tipo de arredondamento.
+ * @param	{Number}	value	O nÃºmero a arredondar.
+ * @param	{Integer}	exp		O expoente (o logaritmo decimal da base pretendida).
+ * @returns	{Number}			O valor depois de ajustado.
+ */
+function decimalAdjust(type, value, exp) {
+  // Se exp Ã© indefinido ou zero...
+  if (typeof exp === 'undefined' || +exp === 0) {
+    return Math[type](value);
+  }
+  value = +value;
+  exp = +exp;
+  // Se o valor nÃ£o Ã© um nÃºmero ou o exp nÃ£o Ã© inteiro...
+  if (isNaN(value) || !(typeof exp === 'number' && exp % 1 === 0)) {
+    return NaN;
+  }
+  // Transformando para string
+  value = value.toString().split('e');
+  value = Math[type](+(value[0] + 'e' + (value[1] ? (+value[1] - exp) : -exp)));
+  // Transformando de volta
+  value = value.toString().split('e');
+  return +(value[0] + 'e' + (value[1] ? (+value[1] + exp) : exp));
+}
+
+// Arredondamento decimal
+if (!Math.round) {
+  Math.round = function(value, exp) {
+    return decimalAdjust('round', value, exp);
+  };
+}
+// Decimal arredondado para baixo
+if (!Math.floor) {
+  Math.floor = function(value, exp) {
+    return decimalAdjust('floor', value, exp);
+  };
+}
+// Decimal arredondado para cima
+if (!Math.ceil) {
+  Math.ceil = function(value, exp) {
+    return decimalAdjust('ceil', value, exp);
+  };
+}
+
+})();
+
+function getPixel(x,y){
+  var context = canvas.getContext('2d');
+  context.drawImage(image, 0, 0);
+}
+
+async function getElevationRaster(point){
+  var token = "pk.eyJ1IjoiZGllZ29tb250ZWlybyIsImEiOiJjaXFjYjBqbnAwMjZjZndtMXVndWpiOXFwIn0.rTkBcWvjVGH2qdr2ATVwOg";
+  var zoom = 12;
+  var lat = point.geometry.coordinates[1];
+  var lng = point.geometry.coordinates[0];
+  var y = lat2tile(lat,zoom);
+  var x = lon2tile(lng,zoom);
+
+  url = "https://api.mapbox.com/v4/mapbox.terrain-rgb/"+zoom+"/"+x+"/"+y+".png32?access_token="+token;
+  
+  const image = await loadImage(url);
+  var imageData =  getImageData(image);
+
+  const tileIndex = getTileIndex(lat,lng,zoom);
+  const tileData  = imageData;
+
+  var elevation = decodeElevationAux(lat,lng,tileIndex,imageData);
+
+  console.log("Result Raster: ", elevation);
+
+  return [lat,lng,elevation];
+
+}
+
+function createTileKey(tileIndex) {
+  return `${tileIndex.zoom}_${tileIndex.y}_${tileIndex.x}`;
+}
+
+function getTileIndex(lat, lon, zoom) {
+  const tms = getLatLonToTile(lat, lon, zoom);
+  
+  return {
+      x: tms.tx,
+      y: tms.ty,
+      zoom: zoom
+  };
+}
+
+function getImageData(image) {
+  const canvas = document.createElement('canvas')
+  canvas.width = image.width
+  canvas.height = image.height
+  const context = canvas.getContext('2d')
+  context.drawImage(image, 0, 0)
+  return context.getImageData(0, 0, image.width, image.height);
+}
+
+function loadImage(url) {
+  return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.crossOrigin = "Anonymous"
+      img.addEventListener('load', () => resolve(img));
+      img.addEventListener('error', reject);
+      img.src = url;
+  });
+}
+
+function getTileExtentPixels(x, y, zoom) {
+  const tms = getTMSTile(x, y, zoom);
+  const tileBounds = getTileBounds(tms.tx, tms.ty, zoom);
+  return {
+      lowerLeft: getMetersToPixels(tileBounds.minx, tileBounds.miny, zoom),
+      upperRight: getMetersToPixels(tileBounds.maxx, tileBounds.maxy, zoom)
+  }
+}
+
+function getTileExtentGeographic(x, y, zoom) {
+  const tms = getTMSTile(x, y, zoom);
+  const tileBounds = getTileBounds(tms.tx, tms.ty, zoom);
+  return {
+      lowerLeft: getMetersToLatLon(tileBounds.minx, tileBounds.miny),
+      upperRight: getMetersToLatLon(tileBounds.maxx, tileBounds.maxy)
+  }
+}
+
+function getQuadKey(tx, ty, zoom) {
+  // Converts TMS tile coordinates to Microsoft QuadTree
+  let quadKey = "";
+  ty = 2 ** zoom - 1 - ty;
+  for (let i = zoom; i > 0; i--) {
+      let digit = 0;
+      let mask = 1 << (i - 1);
+      if ((tx & mask) != 0) {
+          digit += 1;
+      }
+      if ((ty & mask) != 0) {
+          digit += 2;
+      }
+      quadKey += digit.toString();
+  }
+  return quadKey;
+}
+
+function getQuadKeyToTile(quadKey) {
+        // Transform quadkey to tile coordinates
+        let tx = 0;
+        let ty = 0;
+        let zoom = quadKey.length;
+        for (let i = 0; i < zoom; i++) {
+            let bit = zoom - i;
+            let mask = 1 << (bit - 1);
+            if (quadKey[zoom - bit] === "1") {
+                tx |= mask;
+            }
+            if (quadKey[zoom - bit] == "2") {
+                ty |= mask;
+            }
+            if (quadKey[zoom - bit] == "3") {
+                tx |= mask;
+                ty |= mask;
+            }
+        }
+        ty = 2 ** zoom - 1 - ty;
+        return { tx: tx, ty: ty, zoom: zoom };
+    }
+
+function getTMSTile(tx, ty, zoom) {
+  // Converts Google tile coordinates to TMS Tile coordinates
+  return { tx: tx, ty: Math.pow(2, zoom) - 1 - ty };
+}
+
+function decodeElevationAux(lat,lng,tileIndex,tileData){
+  const meters = getLatLonToMeters(lat, lng);
+  const pixels = getMetersToPixels(meters.mx, meters.my, tileIndex.zoom);
+  const tilePixelExtent = getTileExtentPixels(tileIndex.x, tileIndex.y, tileIndex.zoom);
+
+  let xOffset = Math.floor(pixels.px - tilePixelExtent.lowerLeft.px);
+  xOffset = Math.max(0, Math.min(tileData.width- 1, xOffset));
+  let yOffset = tileData.height - Math.floor(pixels.py - tilePixelExtent.lowerLeft.py);
+  yOffset = Math.max(0, Math.min(tileData.height - 1, yOffset));
+
+  const imageDataIndex = yOffset * (tileData.width * 4) + xOffset * 4;
+  const red = tileData.data[imageDataIndex];
+  const green = tileData.data[imageDataIndex + 1];
+  const blue = tileData.data[imageDataIndex + 2];
+
+  return decodeElevation(red,green,blue);
+}
+
+function decodeElevation(r,g,b){
+  elevation = -10000 + ((r * 256 * 256 + g * 256 + b) * 0.1);
+  return elevation;
+}
+
+function getLatLonToMeters(lat, lon) {
+  // Converts given lat/lon in WGS84 Datum to XY in Spherical Mercator EPSG:900913
+  let mx = lon * originShift / 180.0;
+  let my = Math.log(Math.tan((90 + lat) * pi_div_360)) / pi_div_180;
+
+  my = my * originShift / 180.0;
+  return { mx: mx, my: my };
+}
+
+function metersToLatLon(mx, my) {
+  // Converts XY point from Spherical Mercator EPSG:900913 to lat/lon in WGS84 Datum
+  let lon = mx / originShift * 180.0;
+  let lat = my / originShift * 180.0;
+  lat =
+      _180_div_pi *
+      (2 * Math.atan(Math.exp(lat * pi_div_180)) - pi_div_2);
+  return { lat: lat, lon: lon };
+}
+
+function getTileBounds(tx, ty, zoom) {
+  // Returns bounds of the given tile in EPSG:900913 coordinates
+  let minx, miny, maxx, maxy;
+  minx = getPixelsToMeters(
+      tx * tileSize,
+      ty * tileSize,
+      zoom
+  )["mx"];
+  miny = getPixelsToMeters(
+      tx * tileSize,
+      ty * tileSize,
+      zoom
+  )["my"];
+  maxx = getPixelsToMeters(
+      (tx + 1) * tileSize,
+      (ty + 1) * tileSize,
+      zoom
+  )["mx"];
+  maxy = getPixelsToMeters(
+      (tx + 1) * tileSize,
+      (ty + 1) * tileSize,
+      zoom
+  )["my"];
+  return { minx: minx, miny: miny, maxx: maxx, maxy: maxy };
+}
+
+function  getPixelsToMeters(px, py, zoom) {
+  // Converts pixel coordinates in given zoom level of pyramid to EPSG:900913
+  var res, mx, my;
+  res = resolution(zoom);
+  mx = px * res - originShift;
+  my = py * res - originShift;
+  return { mx: mx, my: my };
+}
+
+function getPixelsToRaster(px, py, zoom) {
+  // Move the origin of pixel coordinates to top-left corner
+  var mapSize;
+  mapSize = tileSize << zoom;
+  return { x: px, y: mapSize - py };
+}
+
+function getLatLonToTile(lat, lon, zoom) {
+  var meters = getLatLonToMeters(lat, lon);
+  var pixels = getMetersToPixels(meters.mx, meters.my, zoom);
+  return getPixelsToTile(pixels.px, pixels.py);
+}
+
+function metersToTile(mx, my, zoom) {
+  var pixels = getMetersToPixels(mx, my, zoom);
+  return getPixelsToTile(pixels.px, pixels.py);
+}
+
+function getPixelsToTile(px, py) {
+  // Returns a tile covering region in given pixel coordinates
+  var tx, ty;
+  tx = Math.round(Math.ceil(px / tileSize) - 1);
+  ty = Math.round(Math.ceil(py / tileSize) - 1);
+  return { tx: tx, ty: ty };
+}
+
+
+function getMetersToPixels(mx, my, zoom) {
+  // Converts EPSG:900913 to pyramid pixel coordinates in given zoom level
+  var res = resolution(zoom);
+  var px = (mx + originShift) / res;
+  var py = (my + originShift) / res;
+  return { px: px, py: py };
+}
+
+function resolution(zoom) {
+  // Resolution (meters/pixel) for given zoom level (measured at Equator)
+  return initialResolution / Math.pow(2, zoom);
+}
+
+function lon2tile(lon,zoom) { return (Math.floor((lon+180)/360*Math.pow(2,zoom))); }
+function lat2tile(lat,zoom) { return (Math.floor((1-Math.log(Math.tan(lat*Math.PI/180) + 1/Math.cos(lat*Math.PI/180))/Math.PI)/2 *Math.pow(2,zoom))); }
+
+async function getElevationPointMap(point,plotInMap,plotInChart) {
+
+    var lat = point.geometry.coordinates[1];
+    var lng = point.geometry.coordinates[0];
+
+    var token = "pk.eyJ1IjoiZGllZ29tb250ZWlybyIsImEiOiJjaXFjYjBqbnAwMjZjZndtMXVndWpiOXFwIn0.rTkBcWvjVGH2qdr2ATVwOg";
+    // Construct the API request.
+    const query = await fetch(
+      `https://api.mapbox.com/v4/mapbox.mapbox-terrain-v2/tilequery/${lng},${lat}.json?layers=contour&limit=50&access_token=${token}`,
+      { method: 'GET' }
+    );
+    if (query.status !== 200) return;
+    
+    const data = await query.json();
+    // Get all the returned features.
+    const allFeatures = data.features;
+    //console.log(allFeatures);
+    // For each returned feature, add elevation data to the elevations array.
+    const elevations = allFeatures.map((feature) => feature.properties.ele);
+    //console.log(elevations);
+    // In the elevations array, find the largest value.
+    const highestElevation = Math.max(...elevations);
+    const lowestElevation  = Math.min(...elevations);
+    var point_geo = L.marker([lat,lng,highestElevation],{calculable: true});
+
+    point_geo.on('click', function(e){
+      console.log("Click Marker: ", e);
+      var aux_point = turf.point([e.latlng.lng,e.latlng.lat], {altitude: e.latlng.alt});
+
+      var options = {
+        altitude: e.latlng.alt,
+        rau_region: find_rau_values(aux_point),
+        rxyz_region: find_rxyz_values(aux_point),
+        q710: 0,
+        calculable: true
+      };
+
+      var point = turf.point([e.latlng.lng,e.latlng.lat], options);
+
+      console.log("Point Filled: ", point);
+    });
+
+    if(plotInMap){ 
+      calcGroup.addLayer(point_geo);
+      aux_markers.addLayer(point_geo);
+    }
+    if(plotInChart){
+      //console.log("Alt <> ",highestElevation);
+    }
+
+    return point_geo;
+    //console.log(point_geo);
+  
+}
+
+
+
+/**
+ * Find the Relation of Point (Coords) and Region (X,Y,Z)
+ *
+ * */
+function find_rau_values(aux_point){
+  var ret = {};
+  turf.featureEach(rau, function (current_rau, rau_index) {
+    if(turf.booleanIntersects(current_rau.geometry, aux_point)){
+      //aux_point = turf.point([e.latlng.lng,e.latlng.lat], {altitude: e.latlng.alt, rau_values: current_rau.properties});
+      ret = current_rau.properties;
+      var xt_values = [];
+      var permanence_curves = [];
+      var ab_mean_values = [];
+      var ab_pq_values = [];
+
+      $.each(return_periods, function(i,tr){
+        xt_values.push(getXTCoef(ret.REGIAO, i));
+      });
+
+      //$.each(pps, function(k, p){
+      permanence_curves = getPermanenceCurves(ret.REGIAO);
+      //});
+
+      ret.ab_mean_values = getMeansABCoef(ret.REGIAO);
+      ret.xt_values = xt_values;
+      ret.permanence_curves = permanence_curves;
+      ret.ab_pq_values = getRelationRainToFlowRate(ret.REGIAO); 
+    }
+  })
+  return ret;
+}
+
+function find_rxyz_values(aux_point){
+  var ret = {};
+  turf.featureEach(rxyz, function (current_rxyz, rau_index) {
+    if(turf.booleanIntersects(current_rxyz.geometry, aux_point)){
+      //aux_point = turf.point([e.latlng.lng,e.latlng.lat], {altitude: e.latlng.alt, rau_values: current_rau.properties});
+      ret = current_rxyz.properties;
+    }
+  })
+  return ret;
+}
+
+function calc_minimal_flow_rate_qdt(t,xt,c,qa,a,b){
+  
+  var ret = c * xt * (a+b) * qa;
+
+  if(t == 10){
+    $(".info-q710").html(ret.toFixed(2));
+  }
+
+  console.log("Min.FlowRate (7,T) => xt:",xt,", C:",c,", qa:",qa,", a:",a,", b: ",b," ===> Result: ", ret);
+  return ret;
+}
+
+function calc_volume_regularization(qf,xt,a,qa,b){
+  console.log("Calc.Vol.Reg => a: ",a,", b: ", b,", qf: ", qf,", qa: ",qa);
+  return (Math.pow((qf-(xt*a*qa)),2)/(4*xt*b*qa))*K;
+}
+
+function calc_critical_duration(qf,xt,a,qa,b){
+  console.log("Calc.Duration: a:",a,", b:",b,", xt:",xt,", qa:",qa,", qf:",qf);
+  return ((qf-(xt*a*qa))/(2*xt*b*qa));
+}
+
+function calc_flow_permanence(region, qa, freq_index){
+  var qfs = getPermanenceCurves(region)[freq_index];
+  var ret = qa * qfs;
+
+  if(freq_index == 14){
+    $(".info-q95").html(ret.toFixed(2));
+  }
+
+  console.log("Calc.Flow.Freq(%) Region (",region,")=> freq(%):",pps[freq_index],", Qa:",qa, " ==> Ret: ", ret);
+  return  ret;
+}
+
+function calc_minimal_flow_rate(duration,xt,qa,a,b){
+  console.log("Min.FlowRate: A:",a,"B:",b," - XT: ",xt," - Duration: ", duration);
+  return xt*(a+b*duration)*qa;
+}
+
+function calc_average_flow_rate_long_period(a,b,p,area){
+  
+  var ret = ((a+b*p)*area)/1000;
+  console.log("Qavg(mm/year): a:",a,"b:",b,"p:",p,"area:",area," =>>> Result: ", ret);
+  $(".info-qa").html(ret.toFixed(2));
+
+  return ret;// Convert L/s to mÂ³/s
+}
+
+function calc_availability(xt,a,b,qa,k,d){
+  console.log("Availability => xt: ", xt ,", a: ",a,", b: ", b,", d: ",d,", k: ",k);
+  return xt*(a+b*d)*qa*k*d;
+}
+
+function calc_demand(qf,k,d){
+  return qf*k*d;
+}
+
+function getRelationRainToFlowRate(region){
+  var regions = {
+
+    //I - Region
+    a: {param_a: -22.14, param_b: 0.0292},
+    d: {param_a: -22.14, param_b: 0.0292},
+    e: {param_a: -22.14, param_b: 0.0292},
+    f: {param_a: -22.14, param_b: 0.0292},
+   
+    //II - Region
+    b: {param_a: -29.47, param_b: 0.0315},
+    c: {param_a: -29.47, param_b: 0.0315},
+    h: {param_a: -29.47, param_b: 0.0315},
+    i: {param_a: -29.47, param_b: 0.0315},
+    j: {param_a: -29.47, param_b: 0.0315},
+
+    //III - Region
+    g: {param_a: -26.23, param_b: 0.0278},
+    k: {param_a: -26.23, param_b: 0.0278},
+    l: {param_a: -26.23, param_b: 0.0278},
+    n: {param_a: -26.23, param_b: 0.0278},
+    o: {param_a: -26.23, param_b: 0.0278},
+    p: {param_a: -26.23, param_b: 0.0278},
+    
+    //IV - Region
+    q: {param_a: -4.62, param_b: 0.0098},
+    m: {param_a: -4.62, param_b: 0.0098},
+    r: {param_a: -4.62, param_b: 0.0098},
+    s: {param_a: -4.62, param_b: 0.0098},
+    t: {param_a: -4.62, param_b: 0.0098},
+    u: {param_a: -4.62, param_b: 0.0098}
+  }
+
+  return regions[region.toLowerCase()];
+
+}
+
+function getMeansABCoef(r){
+
+  //console.log("Try find Region Means AB => Region ", r);
+  var regions = {
+    a: {a: 0.3532, b: 0.0398},
+    b: {a: 0.4174, b: 0.0426},
+    c: {a: 0.4174, b: 0.0426},
+    d: {a: 0.5734, b: 0.0329},
+    e: {a: 0.4775, b: 0.0330},
+    f: {a: 0.6434, b: 0.0252},
+    g: {a: 0.4089, b: 0.0332},
+    h: {a: 0.4951, b: 0.0279},
+    i: {a: 0.6276, b: 0.0283},
+    j: {a: 0.4741, b: 0.0342},
+    k: {a: 0.4951, b: 0.0279},
+    l: {a: 0.6537, b: 0.0267},
+    m: {a: 0.6141, b: 0.0257},
+    n: {a: 0.4119, b: 0.0295},
+    o: {a: 0.3599, b: 0.0312},
+    p: {a: 0.3599, b: 0.0312},
+    q: {a: 0.6537, b: 0.0267},
+    r: {a: 0.6141, b: 0.0257},
+    s: {a: 0.5218, b: 0.0284},
+    t: {a: 0.4119, b: 0.0295},
+    u: {a: 0.4119, b: 0.0295}
+
+  }
+
+  return regions[r.toLowerCase()];
+}
+
+function getXTCoef(region, time){
+  
+  var regions = {
+
+    //Region R
+    a: [0.708, 0.674, 0.655, 0.641, 0.607, 0.581],
+    b: [0.708, 0.674, 0.655, 0.641, 0.607, 0.581],
+    d: [0.708, 0.674, 0.655, 0.641, 0.607, 0.581],
+    e: [0.708, 0.674, 0.655, 0.641, 0.607, 0.581],
+    f: [0.708, 0.674, 0.655, 0.641, 0.607, 0.581],
+    i: [0.708, 0.674, 0.655, 0.641, 0.607, 0.581],
+    j: [0.708, 0.674, 0.655, 0.641, 0.607, 0.581],
+
+    //Region S
+    c: [0.748, 0.723, 0.708, 0.698, 0.673, 0.656],
+    h: [0.748, 0.723, 0.708, 0.698, 0.673, 0.656],
+
+    //Region T
+    g: [0.632, 0.588, 0.561, 0.543, 0.496, 0.461],
+
+    //REgion V
+    k: [0.689, 0.658, 0.639, 0.626, 0.595, 0.572],
+    n: [0.689, 0.658, 0.639, 0.626, 0.595, 0.572],
+    o: [0.689, 0.658, 0.639, 0.626, 0.595, 0.572],
+
+    //Region U
+    l: [0.759, 0.733, 0.717, 0.706, 0.677, 0.654],
+    m: [0.759, 0.733, 0.717, 0.706, 0.677, 0.654],
+
+    //Region W
+    p: [0.619, 0.577, 0.552, 0.535, 0.426, 0.459],
+
+    //Region X
+    q: [0.633, 0.572, 0.533, 0.504, 0.426, 0.358],
+
+    //Region Y
+    r: [0.661, 0.629, 0.610, 0.598, 0.568, 0.546],
+    s: [0.661, 0.629, 0.610, 0.598, 0.568, 0.546],
+    t: [0.661, 0.629, 0.610, 0.598, 0.568, 0.546],   
+    
+    //Region z  
+    u: [0.594, 0.518, 0.469, 0.433, 0.330, 0.240]
+  }
+
+  //console.log("Try Get XT Coef (Region,TR) => ", region," <> ",time);
+  return regions[region.toLowerCase()][time];
+}
+
+function getPermanenceCurves(region){
+  var regions = {
+    a: [2.608, 2.045, 1.618, 1.325, 1.165, 1.093, 0.950, 0.810, 0.693, 0.590, 0.535, 0.408, 0.443, 0.393, 0.348, 0.260],
+    b: [2.150, 1.734, 1.505, 1.366, 1.250, 1.153, 0.994, 0.946, 0.745, 0.640, 0.588, 0.545, 0.498, 0.430, 0.371, 0.165],
+    c: [2.150, 1.734, 1.505, 1.366, 1.250, 1.153, 0.994, 0.946, 0.745, 0.640, 0.588, 0.545, 0.498, 0.430, 0.371, 0.165],
+    d: [1.947, 1.597, 1.394, 1.271, 1.193, 1.111, 0.996, 0.897, 0.820, 0.727, 0.687, 0.646, 0.607, 0.560, 0.510, 0.423],
+    e: [2.142, 1.676, 1.496, 1.372, 1.278, 1.160, 0.960, 0.834, 0.744, 0.664, 0.626, 0.580, 0.546, 0.504, 0.440, 0.358],
+    f: [1.797, 1.533, 1.400, 1.297, 1.232, 1.165, 1.003, 0.905, 0.822, 0.743, 0.715, 0.672, 0.643, 0.598, 0.558, 0.465],
+    g: [2.396, 1.983, 1.664, 1.442, 1.255, 1.121, 0.923, 0.789, 0.679, 0.592, 0.547, 0.506, 0.469, 0.420, 0.363, 0.223],
+    h: [2.089, 1.788, 1.579, 1.389, 1.239, 1.118, 0.957, 0.845, 0.750, 0.664, 0.627, 0.590, 0.538, 0.490, 0.434, 0.324],
+    i: [1.913, 1.538, 1.365, 1.270, 1.173, 1.103, 0.923, 0.789, 0.679, 0.592, 0.547, 0.506, 0.469, 0.420, 0.363, 0.223],
+    j: [2.272, 1.792, 1.526, 1.366, 1.231, 1.125, 0.948, 0.807, 0.715, 0.628, 0.596, 0.566, 0.523, 0.462, 0.414, 0.288],
+    k: [2.089, 1.788, 1.579, 1.389, 1.239, 1.118, 0.957, 0.845, 0.750, 0.664, 0.627, 0.590, 0.538, 0.490, 0.434, 0.324],
+    l: [1.770, 1.517, 1.390, 1.310, 1.225, 1.158, 1.012, 0.915, 0.827, 0.748, 0.717, 0.667, 0.628, 0.583, 0.527, 0.420],
+    m: [1.970, 1.666, 1.468, 1.294, 1.181, 1.096, 0.961, 0.874, 0.790, 0.714, 0.679, 0.646, 0.604, 0.570, 0.516, 0.429],
+    n: [2.396, 1.983, 1.664, 1.442, 1.255, 1.121, 0.923, 0.789, 0.679, 0.592, 0.547, 0.506, 0.469, 0.420, 0.363, 0.223],
+    o: [2.408, 2.010, 1.750, 1.538, 1.346, 1.179, 0.935, 0.775, 0.645, 0.547, 0.505, 0.462, 0.418, 0.374, 0.316, 0.170],
+    p: [2.408, 2.010, 1.750, 1.538, 1.346, 1.179, 0.935, 0.775, 0.645, 0.547, 0.505, 0.462, 0.418, 0.374, 0.316, 0.170],
+    q: [1.770, 1.517, 1.390, 1.310, 1.225, 1.158, 1.012, 0.915, 0.827, 0.748, 0.717, 0.667, 0.628, 0.583, 0.527, 0.420],
+    r: [1.940, 1.640, 1.453, 1.320, 1.203, 1.113, 0.967, 0.873, 0.803, 0.713, 0.670, 0.627, 0.577, 0.527, 0.463, 0.340],
+    s: [2.325, 1.823, 1.588, 1.352, 1.188, 1.097, 0.925, 0.810, 0.708, 0.633, 0.598, 0.563, 0.525, 0.488, 0.420, 0.293],
+    t: [2.471, 2.156, 1.751, 1.468, 1.324, 1.109, 0.880, 0.781, 0.674, 0.581, 0.517, 0.481, 0.429, 0.380, 0.316, 0.240],
+    u: [2.471, 2.156, 1.751, 1.468, 1.324, 1.109, 0.880, 0.781, 0.674, 0.581, 0.517, 0.481, 0.429, 0.380, 0.319, 0.241]
+  };
+
+  return regions[region.toLowerCase()];
+}
+
+/**
+ * Method to Get Mean of Annual Precipitation values of Isolines calculated,
+ * Executing grid points of 1 kilometer, filtering point of basin border
+ * Populating options values with Isoband calculated value
+ * 
+ */
+function getAvgAnnualRainByRegion(basin_border_geo){
+  var isobands_bounds = basin_border_geo.getBounds();
+
+  var extent = [isobands_bounds._southWest.lng, isobands_bounds._southWest.lat, isobands_bounds._northEast.lng, isobands_bounds._northEast.lat,];
+  var cellSide = 1;
+  var options = {units: 'kilometers'};
+  var avg_rain_areas;
+  var avg_rain_points;
+
+  var point_grids = turf.pointGrid(extent, cellSide, options);
+
+  var rain_avg_weighted_areas = [];
+  var rain_avg_weighted_points = [];
+  
+  turf.featureEach(rain_isoline, function(rainFeature, rainIndex){
+    var pts = turf.pointsWithinPolygon(point_grids, rainFeature);
+
+    if(pts.features.length > 0){
+    
+      turf.featureEach(basin_border_geo.toGeoJSON(), function(basinFeature, basinIndex){
+       
+        console.log("Isoband: ", rainFeature);
+        console.log("BasinShape: ", basinFeature);
+
+        //Check basin is Polygon to convert to LineString
+        if(turf.getType(basinFeature) == "Polygon"){
+          console.log("Convert Geometry: ", basinFeature);
+          basinFeature = turf.polygonToLine(basinFeature);
+        }
+
+        var isoband = turf.intersect(turf.lineToPolygon(basinFeature), rainFeature);
+        console.log("Isoband AVG: ", isoband);
+        if(isoband){
+          var partial_area = turf.area(isoband.geometry)/1000000;
+          avg_rain_obj = {rain: rainFeature.properties.ID, partial_area: partial_area};
+
+          isoband.properties = $.extend({}, avg_rain_obj, basinFeature.properties);
+
+          var isoband_geo = L.geoJSON(isoband, {
+            onEachFeature: function(feature, layer){
+              layer.on({
+                //mouseover: highlightFeature,
+                //mouseout: resetHighlight,
+                click: function(e){
+                  
+                  console.log("Partial Rain: ", e.target.feature.properties);
+                }
+              });
+            },
+            style: style_rain_isoline
+          });
+
+          rain_avg_weighted_areas.push({value: avg_rain_obj.rain, weight: partial_area});
+          isolineGroup.addLayer(isoband_geo);
+        }
+        
+      });
+
+      
+      var pts_tags = turf.tag(pts, rainFeature,'ID','rain');
+      var avg_rain = _.meanBy(pts_tags.features, function(o){ return o.properties.rain });
+      rain_avg_weighted_points.push({value: avg_rain, weight: pts_tags.features.length});
+    }
+  });
+
+  avg_rain_areas = calc_avg_weight(rain_avg_weighted_areas);
+  avg_rain_points = calc_avg_weight(rain_avg_weighted_points);
+
+  console.log("Rain Area: ",avg_rain_areas," - Points: ",avg_rain_points);
+  return avg_rain_areas;
+}
+
+function isolineIntersect(isolines, basin_border){
+  console.log("Isolines: ", isolines);
+  console.log("Basin Border: ", basin_border);
+}
+
+function zoomToFeature(e) {
+    calcGroup.clearLayers();
+    aux_markers.clearLayers();
+    isolineGroup.clearLayers();
+
+    var targetPoint;
+
+    console.log(e.target.feature.properties);
+
+    var area = turf.area(e.target.feature.geometry)/1000000;
+    var basin_border = turf.polygonToLine(e.target.feature);
+    var perimeter = turf.length(basin_border, {units: 'kilometers'});
+    var coef_compacity = calc_coef_compacity(area,perimeter);
+
+    console.log("Borda da Bacia: ", basin_border);
+
+    $(".info-area").html(area.toFixed(2));
+    $(".info-perimeter").html(perimeter.toFixed(2));
+    $(".info-coef-compacity").html(coef_compacity.toFixed(2));
+
+    var basin_border_geo = L.geoJSON(basin_border, {
+      style: function(feature){
+        return {
+            fillColor: "#ffcc22",
+            weight: 5,
+            opacity: 1,
+            color: 'green',
+            dashArray: '3',
+            fillOpacity: 0.1
+        };
+      }
+    });
+    
+    var ottotrecho_filtered = L.geoJSON(ottotrechos, {
+      style: function(feature){
+        return {
+            fillColor: "#22cc22",
+            weight: 5,
+            opacity: 1,
+            color: 'blue',
+            dashArray: '3',
+            fillOpacity: 0.1
+        };
+      },
+      filter: function(feature, layer){
+        return feature.properties.COBACIA == e.target.feature.properties.COBACIA;
+      }
+    })
+
+    var ottotrecho_filtered_geo = ottotrecho_filtered.toGeoJSON();
+    
+    var isolines_rain = L.geoJSON(rain_isoline, {
+      style: style_rain_isoline,
+      filter: function(feature,layer){
+        return (turf.booleanIntersects(feature.geometry, basin_border));
+      }
+    });
+
+    var avg_rain = getAvgAnnualRainByRegion(basin_border_geo);
+
+    $(".info-rain-avg").html(avg_rain.toFixed(1));
+
+    $.each(ottotrecho_filtered.getLayers(), function(k,layer){
+
+      var x = _.first(layer.feature.geometry.coordinates[0]);
+      var y = _.last(layer.feature.geometry.coordinates[0]);
+
+      var xlength = turf.length(layer.feature, {units: 'kilometers'});
+
+      var point_x = turf.point([x[0], x[1]]);
+      var point_y = turf.point([y[0], y[1]]);
+
+      var point_a = getElevationPointMap(point_x, true, false);
+      var point_b = getElevationPointMap(point_y, true, false);
+
+      Promise.all([point_a, point_b]).then(values => {
+        var point_ax = _.first(values);
+        var point_ay = _.last(values);
+        var target_point;
+
+        if(point_ax._latlng.alt > point_ay._latlng.alt){
+          target_point = point_ay;
+        }
+        else{
+          target_point = point_ax;
+        }
+
+        var aux_point = turf.point([point_ax._latlng.lng, point_ax._latlng.lat], {altitude: point_ax._latlng.alt});
+
+        //Calc values
+        var rau_obj = find_rau_values(aux_point);
+        var rxyz_obj = find_rxyz_values(aux_point);
+
+        
+        console.log("Target RAU: ", rau_obj);
+        console.log("Target RXYZ: ", rxyz_obj);
+
+        var qls_m3s = calc_average_flow_rate_long_period(rau_obj.ab_pq_values.param_a, rau_obj.ab_pq_values.param_b, avg_rain, area);
+        var q95 = calc_flow_permanence(rau_obj.REGIAO, qls_m3s, 14);
+
+        target_point.options.q7_values = [];
+        target_point.options.qperm_values = [];
+
+        $.each(pps, function(k,p){
+          target_point.options.qperm_values.push([p, calc_flow_permanence(rau_obj.REGIAO, qls_m3s, k)]);
+        });
+
+        $.each(return_periods, function(w,t){
+          var xt = rau_obj.xt_values[w];
+          var qdT  = calc_minimal_flow_rate_qdt(t, xt,rxyz_obj.C,qls_m3s,rau_obj.ab_mean_values.a,rau_obj.ab_mean_values.b,7);
+          //console.log("Q(7,"+t+") => "+qdT.toFixed(2)+" mÂ³/s");
+          target_point.options.q7_values.push([t, qdT]);
+          
+          if(w == 0){
+            //q710 = qdT;
+            target_point.options.q710 = qdT;
+          }
+        });
+
+        target_point.options.qls_m3s = qls_m3s;
+        target_point.options.q95 = q95;
+
+        console.log("Target: ", target_point);
+      });
+
+      //Check Lower Point
+      aux_markers.getLayers();
+
+      $(".info-length").html(xlength.toFixed(2));
+      $(".info-points").html(layer.feature.geometry.coordinates[0].length);
+      $(".info-slope").html(layer.feature.properties.DECLIVIDAD);
+
+      /*var elevations = [];
+      $.each(layer.feature.geometry.coordinates[0], function(kx, ky){
+        if((kx > 0 && kx < layer.feature.geometry.coordinates[0].length)){
+          var point_xy = turf.point([ky[0], ky[1]]);
+          elevations.push(getElevationRaster(point_xy));
+        }
+      });
+
+      Promise.all(elevations).then((values) => {
+        console.log("Elevations: ", values);
+
+        var offcanvas_elevations = document.getElementById('offcanvas-elevations');
+        var elevations_bar = new bootstrap.Offcanvas(offcanvas_elevations);
+        var elevations_serie = {
+          name: 'Altitude(m)',
+          data: []
+        };
+        
+        var elevation_chart = Highcharts.chart('elevation_chart', {
+            chart: {
+                zoomType: 'x'
+            },
+            title: {
+              text: undefined
+            },
+            xAxis: {
+                type: 'linear'
+            },
+            yAxis: {
+                title: {
+                    text: 'Altitude (m)'
+                }
+            },
+            legend: {
+                enabled: false
+            },
+            plotOptions: {
+                area: {
+                    fillColor: {
+                        linearGradient: {
+                            x1: 0,
+                            y1: 0,
+                            x2: 0,
+                            y2: 1
+                        },
+                        stops: [
+                            [0, Highcharts.getOptions().colors[0]],
+                            [1, Highcharts.color(Highcharts.getOptions().colors[0]).setOpacity(0).get('rgba')]
+                        ]
+                    },
+                    marker: {
+                        radius: 2
+                    },
+                    lineWidth: 1,
+                    states: {
+                        hover: {
+                            lineWidth: 1
+                        }
+                    },
+                    threshold: null
+                }
+            },
+
+            series: [{
+                type: 'area',
+                name: 'Altitudes',
+                data: _.map(values, function(o){ return o[2]; })
+            }]
+        });
+
+        var point_a = _.first(values);
+        var point_b = _.last(values);
+        var exit_point;
+
+        if(point_a[2] > point_b[2]){
+          exit_point = point_b;
+        }
+        else{
+          exit_point = point_a;
+        }
+
+        var aux_point = turf.point([exit_point[1], exit_point[0]], {altitude: exit_point[2]});
+
+        var rau = find_rau_values(aux_point);
+        var rxyz = find_rxyz_values(aux_point);
+
+        var qls_m3s = calc_average_flow_rate_long_period(rau.ab_pq_values.param_a, rau.ab_pq_values.param_b, avg_rain, area);
+
+        var options = {
+          altitude: exit_point[2],
+          rau_region: rau,
+          rxyz_region: rxyz,
+          qls_m3s: qls_m3,
+          calculable: true
+        };
+
+        var point_e = turf.point([exit_point[1],exit_point[0]], options);
+
+        console.log("Ponto de exutÃ³rio: ", point_e);
+
+        elevations_bar.show();
+      });*/
+    });
+
+    
+
+   
+    calcGroup.addLayer(basin_border_geo);
+    calcGroup.addLayer(ottotrecho_filtered);
+    //isolineGroup.addLayer(isolines_rain);
+    //var modal = new bootstrap.Modal(document.getElementById('modal-results'), {});
+
+    var offcanvas = document.getElementById('offcanvas-info');
+    var bsoffcanvas = new bootstrap.Offcanvas(offcanvas);
+    console.log("Obj: ", ottotrecho_filtered_geo.features[0]);
+
+    var ottotrecho_obj = ottotrecho_filtered_geo.features[0].properties;
+    var nome_trecho = (ottotrecho_obj.NOCOMPLETO != null) ? ottotrecho_obj.NOCOMPLETO : "SEM NOME";
+
+    $("#offcanvas-info-title").html(ottotrecho_obj.COBACIA+" - "+truncate(nome_trecho, 20));
+  
+
+    bsoffcanvas.show();
+
+    //$(".modal-title").html(ottotrecho_filtered_geo.feature[0].COBACIA);
+   /*  var ottotrecho_obj = ottotrecho_filtered_geo.features[0].properties;
+    var nome_trecho = (ottotrecho_obj.NOCOMPLETO != null) ? ottotrecho_obj.NOCOMPLETO : "SEM NOME";
+
+    modal.show(); */
+    map.fitBounds(e.target.getBounds());
+}
+
+function calc_avg_weight(values){
+  var total_weight = _.sumBy(values, function(o){ return o.weight });
+  var aux_vals = [];
+
+  $.each(values, function(k,v){
+    aux_vals.push(v.value * v.weight);
+  });
+
+  return _.sum(aux_vals)/total_weight;
+}
+
+function calc_coef_compacity(area,perimeter){
+  return 0.28 * (perimeter/Math.sqrt(area));
+}
+
+function onEachFeature(feature, layer) {
+    layer.on({
+        mouseover: highlightFeature,
+        mouseout: resetHighlight,
+        click: zoomToFeature
+    });
+}
+
+function resize_map(){
+  
+  var height = $(window).height() - ($("#navbarCollapse").height()+18);
+  var width  = $(window).width();
+
+  console.log("Alt: ",height);
+
+  $("#map").height(height).width(width);
+  
+  map.invalidateSize();
+}
+
+
+
+function load_baselayers(){
+
+
+providers['Mapbox_Outdoors'] = {
+    title: 'outdoors',
+    icon: 'imgs/mapbox-outdoors.png',
+    layer: L.tileLayer('https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token={accessToken}', {
+    attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors, <a href="https://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, Imagery Â© <a href="https://www.mapbox.com/">Mapbox</a>',
+    id: 'diegomonteiro/ckzsznqn1001b14k5jqpw442k',
+    accessToken: 'pk.eyJ1IjoiZGllZ29tb250ZWlybyIsImEiOiJjaXFjYjBqbnAwMjZjZndtMXVndWpiOXFwIn0.rTkBcWvjVGH2qdr2ATVwOg'
+  })
+};
+
+providers['Mapbox_Streets'] = {
+    title: 'streets',
+    icon: 'imgs/mapbox-street.png',
+    layer: L.tileLayer('https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token={accessToken}', {
+    maxZoom: 18,
+    id: 'mapbox/streets-v11',
+    tileSize: 512,
+    zoomOffset: -1,
+    accessToken: 'pk.eyJ1IjoiZGllZ29tb250ZWlybyIsImEiOiJjaXFjYjBqbnAwMjZjZndtMXVndWpiOXFwIn0.rTkBcWvjVGH2qdr2ATVwOg'
+  })
+};
+
+providers['Mapbox_Grayscale'] = {
+    title: 'grayscale',
+    icon: 'imgs/mapbox-whiteblack.png',
+    layer: L.tileLayer('https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token={accessToken}', {
+    attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors, <a href="https://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, Imagery Â© <a href="https://www.mapbox.com/">Mapbox</a>',
+    maxZoom: 18,
+    id: 'diegomonteiro/ckzt04tmb000x15pnabkxg5fc',
+    accessToken: 'pk.eyJ1IjoiZGllZ29tb250ZWlybyIsImEiOiJjaXFjYjBqbnAwMjZjZndtMXVndWpiOXFwIn0.rTkBcWvjVGH2qdr2ATVwOg'
+  })
+};
+
+providers['Mapbox_Dark'] = {
+    title: 'dark',
+    icon: 'imgs/mapbox-dark.png',
+    layer: L.tileLayer('https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token={accessToken}', {
+    attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors, <a href="https://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, Imagery Â© <a href="https://www.mapbox.com/">Mapbox</a>',
+    maxZoom: 18,
+    id: 'diegomonteiro/ckzt06bgf000y15pnxmk0csic',
+    accessToken: 'pk.eyJ1IjoiZGllZ29tb250ZWlybyIsImEiOiJjaXFjYjBqbnAwMjZjZndtMXVndWpiOXFwIn0.rTkBcWvjVGH2qdr2ATVwOg'
+  })
+};
+
+providers['Mapbox_Satellite'] = {
+    title: 'satellite',
+    icon: 'imgs/mapbox-satellite.png',
+    layer: L.tileLayer('https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token={accessToken}', {
+    attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors, <a href="https://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, Imagery Â© <a href="https://www.mapbox.com/">Mapbox</a>',
+    maxZoom: 18,
+    id: 'diegomonteiro/ckzszx8bu001514qupk8mtfdr',
+    accessToken: 'pk.eyJ1IjoiZGllZ29tb250ZWlybyIsImEiOiJjaXFjYjBqbnAwMjZjZndtMXVndWpiOXFwIn0.rTkBcWvjVGH2qdr2ATVwOg'
+  })
+};
+
+providers['Cartas_Topograficas_IBGE_50k'] = {
+  title: 'TopogrÃ¡fia',
+  icon: 'imgs/mapbox-satellite.png',
+  layer: L.tileLayer.wms('https://datageo.ambiente.sp.gov.br/geoimage/datageoimg/Cartas_50k_IBGE/ows?',{
+    layers: 'Cartas_50k_IBGE'
+  })
+}
+
+providers['Cartas_Topograficas_IBGE_250k'] = {
+  title: 'TopogrÃ¡fia',
+  icon: 'imgs/mapbox-satellite.png',
+  layer: L.tileLayer.wms('https://datageo.ambiente.sp.gov.br/geoimage/datageoimg/ESP_CARTAS_TOPO_250K_IBGE/ows?',{
+    layers: 'ESP_CARTAS_TOPO_250K_IBGE'
+  })
+}
+
+providers['Modelo_Digital_Elevacao'] = {
+  title: 'MDE',
+  icon: 'imgs/cpla_funcate.png',
+  layer: L.tileLayer.wms('https://datageo.ambiente.sp.gov.br/geoimage/datageoimg/MODELO_DIGITAL_TERRENO_CPLA_FUNCATE_2013/ows?',{
+    layers: 'MODELO_DIGITAL_TERRENO_CPLA_FUNCATE_2013'
+  })
+};
+
+
+var baselayers = [];
+for (var providerId in providers) {
+  baselayers.push(providers[providerId]);
+}
+
+var ctrl = L.control.iconLayers(baselayers, {position: 'bottomright'}).addTo(map);
+
+
+ctrl.on('activelayerchange', function(e) {
+  console.log('layer switched', e.layer);
+});
+
+}
+    
+</script>
+</html>
