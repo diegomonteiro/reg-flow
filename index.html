@@ -79,6 +79,41 @@
     </div>
   </nav>
 
+  <!-- Modal -->
+  <div class="modal fade" id="modal-q710" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="exampleModalLabel">Vazão mínima anual de 7 dias consecutivos</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <div id="chart-q710"></div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal -->
+  <div class="modal fade" id="modal-q95" tabindex="-1" aria-labelledby="label-modal-q95" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="label-modal-q95">Vazões para P% de Permanência</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <div id="chart-q95"></div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <div class="offcanvas offcanvas-start" tabindex="-1" id="offcanvas-info" data-bs-scroll="true" data-bs-backdrop="false" aria-labelledby="offcanvas-info">
     <div class="offcanvas-header">
@@ -94,7 +129,6 @@
             <ul class="list-group list-group-flush">
                 <li class="list-group-item"><b>Área (km²):</b> <span class="info-area"></span></li>
                 <li class="list-group-item"><b>Perí­metro (km): </b> <span class="info-perimeter"></span></li>
-                <li class="list-group-item"><b>Coef.Compacidade: </b><span class="info-coef-compacity"></span></li>
                 <li class="list-group-item"><b>Prec.Média(mm): </b><span class="info-rain-avg"></span></li>
             </ul>
         
@@ -106,7 +140,6 @@
             <ul class="list-group list-group-flush">
                 <li class="list-group-item"><h4><span class="info-qa"></span> m³/s</h4></li>
             </ul>
-            <div class="card-footer"><a class="btn btn-success btn-sm"> Ver gráfico</a></div>
         </div>
 
         <div class="card text-white bg-primary mb-3">
@@ -114,7 +147,8 @@
             <ul class="list-group list-group-flush">
                 <li class="list-group-item"><h4><span class="info-q95"></span> m³/s</h4></li>
             </ul>
-            <div class="card-footer"><a class="btn btn-success btn-sm pull-right"> Ver gráfico</a></div>
+            <a class="btn btn-success btn-sm" data-bs-toggle="modal" data-bs-target="#modal-q95"> Ver gráfico</a>
+            
         </div>
 
         <div class="card text-white bg-primary mb-3">
@@ -122,7 +156,7 @@
             <ul class="list-group list-group-flush">
                 <li class="list-group-item"><h4><span class="info-q710"></span> m³/s</h4></li>
             </ul>
-        <div class="card-footer"><a class="btn btn-success btn-sm"> Ver gráfico</a></div>
+            <a class="btn btn-success btn-sm" data-bs-toggle="modal" data-bs-target="#modal-q710"> Ver gráfico</a>
         </div>
       
     </div>
@@ -152,6 +186,16 @@ var overlayMaps = {};
 var controlLayer;
 var scalebar;
 var opacity_control;
+
+var series_q710 = {
+  name: 'Q(7,10)',
+  data: []
+};
+
+var series_q95 = {
+  name: 'Q95%',
+  data: []
+};
 
 const pi_div_360 = Math.PI / 360.0;
 const pi_div_180 = Math.PI / 180.0;
@@ -286,7 +330,7 @@ map.on('pm:create', (e) => {
               
               var xt = rau.xt_values[w];
               var qmin = calc_minimal_flow_rate(d,xt,qls_m3s,rau.ab_mean_values.a,rau.ab_mean_values.b);
-              
+              series_q710.data.push([t, qmin]);
               console.log("DT("+d+","+t+") => XT:",rau.xt_values[w]," >>> Q(min): ",qmin);
             });
             console.log("------------");
@@ -296,16 +340,25 @@ map.on('pm:create', (e) => {
           var q710;
           var q95 = calc_flow_permanence(rau.REGIAO, qls_m3s, 14);
 
+          $.each(pps, function(k,p){
+            var val = calc_flow_permanence(rau_obj.REGIAO, qls_m3s, k);
+            series_q95.data.push([p,val]);
+            target_point.options.qperm_values.push([p, val]);
+          });
+         
+
           $.each(return_periods, function(w,t){
             var xt = rau.xt_values[w];
             var qdT  = calc_minimal_flow_rate_qdt(t,xt,rxyz.C,qls_m3s,rau.ab_mean_values.a,rau.ab_mean_values.b,7);
-            console.log("Q(7,"+t+") => "+qdT.toFixed(2)+" mÂ³/s");
+            //console.log("Q(7,"+t+") => "+qdT.toFixed(2)+" mÂ³/s");
+            series_q710.data.push([t, qdT]);
 
             if(w == 0){
               q710 = qdT;
               $(".info-q710").html(q710.toFixed(2));
             }
           });
+          
 
           var offcanvas = document.getElementById('offcanvas-info');
           var bsoffcanvas = new bootstrap.Offcanvas(offcanvas);
@@ -1268,7 +1321,9 @@ function zoomToFeature(e) {
         target_point.options.qperm_values = [];
 
         $.each(pps, function(k,p){
-          target_point.options.qperm_values.push([p, calc_flow_permanence(rau_obj.REGIAO, qls_m3s, k)]);
+          var val = calc_flow_permanence(rau_obj.REGIAO, qls_m3s, k);
+          series_q95.data.push([p,val]);
+          target_point.options.qperm_values.push([p, val]);
         });
 
         $.each(return_periods, function(w,t){
@@ -1276,7 +1331,8 @@ function zoomToFeature(e) {
           var qdT  = calc_minimal_flow_rate_qdt(t, xt,rxyz_obj.C,qls_m3s,rau_obj.ab_mean_values.a,rau_obj.ab_mean_values.b,7);
           //console.log("Q(7,"+t+") => "+qdT.toFixed(2)+" mÂ³/s");
           target_point.options.q7_values.push([t, qdT]);
-          
+          series_q710.data.push([t, qdT]);
+
           if(w == 0){
             //q710 = qdT;
             target_point.options.q710 = qdT;
