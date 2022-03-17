@@ -340,6 +340,9 @@ map.on('pm:create', (e) => {
           var q710;
           var q95 = calc_flow_permanence(rau.REGIAO, qls_m3s, 14);
 
+          series_q710.data = [];
+          series_q95.data = [];
+
           $.each(pps, function(k,p){
             var val = calc_flow_permanence(rau_obj.REGIAO, qls_m3s, k);
             series_q95.data.push([p,val]);
@@ -1319,6 +1322,8 @@ function zoomToFeature(e) {
 
         target_point.options.q7_values = [];
         target_point.options.qperm_values = [];
+        series_q710.data = [];
+        series_q95.data = [];
 
         $.each(pps, function(k,p){
           var val = calc_flow_permanence(rau_obj.REGIAO, qls_m3s, k);
@@ -1342,8 +1347,106 @@ function zoomToFeature(e) {
         target_point.options.qls_m3s = qls_m3s;
         target_point.options.q95 = q95;
 
-        console.log("Target: ", target_point);
+        //console.log("Target: ", target_point);
+
+        var chart_series_q710 = Highcharts.chart('chart-q710', {
+            chart: {
+                zoomType: 'x'
+            },
+            title: {
+              text: undefined
+            },
+            xAxis: {
+                type: 'linear'
+            },
+            yAxis: {
+                title: {
+                    text: 'Q710 (m³/s)'
+                }
+            },
+            legend: {
+                enabled: false
+            },
+            plotOptions: {
+                area: {
+                    fillColor: {
+                        linearGradient: {
+                            x1: 0,
+                            y1: 0,
+                            x2: 0,
+                            y2: 1
+                        },
+                        stops: [
+                            [0, Highcharts.getOptions().colors[0]],
+                            [1, Highcharts.color(Highcharts.getOptions().colors[0]).setOpacity(0).get('rgba')]
+                        ]
+                    },
+                    marker: {
+                        radius: 2
+                    },
+                    lineWidth: 1,
+                    states: {
+                        hover: {
+                            lineWidth: 1
+                        }
+                    },
+                    threshold: null
+                }
+            },
+
+            series: [series_q710]
+        });
       });
+
+      var chart_series_q95 = Highcharts.chart('chart-q95', {
+            chart: {
+                zoomType: 'x'
+            },
+            title: {
+              text: undefined
+            },
+            xAxis: {
+                type: 'linear'
+            },
+            yAxis: {
+                title: {
+                    text: 'Q% (m³/s)'
+                }
+            },
+            legend: {
+                enabled: false
+            },
+            plotOptions: {
+                area: {
+                    fillColor: {
+                        linearGradient: {
+                            x1: 0,
+                            y1: 0,
+                            x2: 0,
+                            y2: 1
+                        },
+                        stops: [
+                            [0, Highcharts.getOptions().colors[0]],
+                            [1, Highcharts.color(Highcharts.getOptions().colors[0]).setOpacity(0).get('rgba')]
+                        ]
+                    },
+                    marker: {
+                        radius: 2
+                    },
+                    lineWidth: 1,
+                    states: {
+                        hover: {
+                            lineWidth: 1
+                        }
+                    },
+                    threshold: null
+                }
+            },
+
+            series: [series_q95]
+      });
+
+     
 
       //Check Lower Point
       aux_markers.getLayers();
